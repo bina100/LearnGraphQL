@@ -55,33 +55,27 @@ export const jobByIdQuery = gql`
 `;
 
 export const jobsQuery = gql`
-  query Jobs {
-    jobs {
-      id
-      date
-      title
-      company {
+  query Jobs($limit: Int, $offset: Int) {
+    jobs(limit: $limit, offset: $offset) {
+      items {
         id
-        name
+        date
+        title
+        company {
+          id
+          name
+        }
       }
+      totalCount
     }
   }
 `;
 
-// Define and export getJobs function
-export async function getJobs() {
-  const { data } = await apolloClient.query({
-    query: jobsQuery,
-    fetchPolicy: 'network-only',
-  });
-  return data.jobs;
-}
-
 export const createJobMutation = gql`
-mutation CreateJob($input: CreateJobInput!) {
-  job: createJob(input: $input) {
-    ...JobDetail
+  mutation CreateJob($input: CreateJobInput!) {
+    job: createJob(input: $input) {
+      ...JobDetail
+    }
   }
-}
-${jobDetailFragment}
+  ${jobDetailFragment}
 `;

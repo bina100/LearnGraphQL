@@ -1,6 +1,6 @@
 import { GraphQLError } from 'graphql'
 import { getCompany } from './db/companies.js'
-import { createJob, deleteJob, getJob, getJobByCompany, getJobs, updateJob } from './db/jobs.js'
+import { countJobs, createJob, deleteJob, getJob, getJobByCompany, getJobs, updateJob } from './db/jobs.js'
 
 export const resolvers = {
     Query: {
@@ -19,7 +19,11 @@ export const resolvers = {
             return job
 
         },
-        jobs: () => getJobs()
+        jobs: async(_root, { limit, offset }) => {
+            const items = await getJobs(limit, offset)
+            const totalCount = await countJobs()
+            return{ items, totalCount}
+        }
     },
 
     Mutation: {
@@ -29,34 +33,34 @@ export const resolvers = {
             }
             return createJob({ companyId: user.companyId, title, description })
         },
-        deleteJob: async (_root, { id }, {user}) => {
+        deleteJob: async (_root, { id }, { user }) => {
             if (!user) {
                 throw unAuthorizedError('Missing authentication')
             }
             const job = await deleteJob(id)
-            if(!job){
+            if (!job) {
                 throw notFoundError('No job found with id ' + id)
             }
             return job
         },
-        updateJob: async(_root, { input: { id, title, description } }, {user}) => {
+        updateJob: async (_root, { input: { id, title, description } }, { user }) => {
             if (!user) {
                 throw unAuthorizedError('Missing authentication')
             }
-            const job = await  updateJob({ id,companyId:user.companyId, title, description })
-            if(!job){
+            const job = await updateJob({ id, companyId: user.companyId, title, description })
+            if (!job) {
                 throw notFoundError('No job found with id ' + id)
             }
             return job
-           
-           
+
+
         },
     },
     Company: {
         jobs: (company) => getJobByCompany(company.id)
     },
     Job: {
-        company: (job, _args, {companyLoader}) => companyLoader.load(job.companyId),
+        company: (job, _args, { companyLoader }) => companyLoader.load(job.companyId),
         date: (job) => toIsoDate(job.createdAt)
     }
 }
